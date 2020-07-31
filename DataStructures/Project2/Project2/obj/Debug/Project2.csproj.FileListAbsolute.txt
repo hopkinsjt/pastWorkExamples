@@ -1,0 +1,13 @@
+/Users/Justin_Hopkins/Documents/Project2/Project2/bin/Debug/Project2.exe.config
+/Users/Justin_Hopkins/Documents/Project2/Project2/bin/Debug/Project2.exe
+/Users/Justin_Hopkins/Documents/Project2/Project2/bin/Debug/Project2.pdb
+/Users/Justin_Hopkins/Documents/Project2/Project2/obj/Debug/Project2.csprojAssemblyReference.cache
+/Users/Justin_Hopkins/Documents/Project2/Project2/obj/Debug/Project2.AboutBox.resources
+/Users/Justin_Hopkins/Documents/Project2/Project2/obj/Debug/Project2.Properties.Resources.resources
+/Users/Justin_Hopkins/Documents/Project2/Project2/obj/Debug/Project2.SplashScreen.resources
+/Users/Justin_Hopkins/Documents/Project2/Project2/obj/Debug/Project2.TextAnalysisToolkitForm.resources
+/Users/Justin_Hopkins/Documents/Project2/Project2/obj/Debug/Project2.UserLogin.resources
+/Users/Justin_Hopkins/Documents/Project2/Project2/obj/Debug/Project2.csproj.GenerateResource.cache
+/Users/Justin_Hopkins/Documents/Project2/Project2/obj/Debug/Project2.csproj.CoreCompileInputs.cache
+/Users/Justin_Hopkins/Documents/Project2/Project2/obj/Debug/Project2.exe
+/Users/Justin_Hopkins/Documents/Project2/Project2/obj/Debug/Project2.pdb
