@@ -1,0 +1,561 @@
+Microsoft (R) Macro Assembler Version 6.11		    12/08/17 00:57:00
+convertMethods.asm					     Page 1 - 1
+
+
+				;******************************************************************************************
+				;Program Name: convertMethods.asm
+				;Programmer:   Justin Hopkins
+				;Class:        CSCI 2160-001
+				;Date:         DEC,08 2017 at 09:00 AM
+				;Purpose:	  encryption and displaying hex values see method documentation for discription
+				;	
+				;******************************************************************************************
+					.486
+					.model flat
+ 00000000				.data
+					hexToCharacter proto near32 stdCall, lpDestination:dword,lpSource:dWord, numBytes:dword
+					charTo4HexDigits proTO near32 stdCall, lpSourceString:dword
+					encrypt32Bit proto near32 stdCall,lpSourceString:dword,dMask:dword,numBytes:dword
+					memoryallocBailey proto near32 stdCall, numBytes:dword
+					
+ 00000000				.code
+				COMMENT%
+				************************************************************************************
+				* name:  hexToCharacter															   *
+				* date Created: 11/30/2017 														   *
+				*Date Last Modefied: 12/08/2017                                                    *
+				* purpose: sets the length of a box object                                         *
+				*Notes on specifications,special algorithms, and assumptions: if the len property  *
+				*		  is less than or equal to zero no action is taken.						   *
+				* @param  lpDestination :dword Where the converted string is going                 *
+				* @param  lpSource:dword The value you wish to convert to ascii                    *
+				* @param  numBytes:dword the number of bytes to convert
+				* @Return Void                                                                     *
+				*                                                                                  *
+				************************************************************************************%
+ 00000000			hexToCharacter proc near32 stdCall	uses eax ebx ecx edi edx esi, lpDestination:dword,lpSource:dWord, numBytes:dword
+					local bAddressShift:byte		;local storage
+ 0000000C  8B 5D 08			mov ebx,lpDestination			;moved to register to manipulate
+ 0000000F  8B 55 0C			mov edx,lpSource				;moved to register to manipulate
+ 00000012  C6 45 FF 1C			mov bAddressShift,28			;will be used to move through address
+ 00000016  BE 00000000			mov esi,0						;will be used to mark position in string
+ 0000001B  BF 00000000			mov edi,0						;will be used to mark position in the source
+					
+					.if numBytes >0					;if the number of bytes specified is greater than 4
+ 0000002A  8B 4D 10				mov ecx, numBytes			;loop through numBytes times
+ 0000002D			stLoop:								;build a null terminated string
+ 0000002D  B8 00000000				mov eax,0					;clear contents for shifting operations
+ 00000032  8A 04 17				mov	al, byte ptr [edx+edi]  ;grab the next byte to convert
+ 00000035  66| C1 E0 08				shl ax,8					;shift to left high order of byte alone in AH
+ 00000039  66| C1 E8 04				shr ax,4				;shift to right to get low order of byte alone in top of al
+ 0000003D  C0 E8 04				shr al,4				;shift to right to get low order of byte to bottom of al
+						.if AH==0					;if AH is zero
+ 00000044  C6 04 1E 30					mov byte ptr[ebx+esi],30h		;move an ascii 0 into the string
+						.elseif AH==1						;if AH is 1
+ 00000052  C6 04 1E 31					mov byte ptr[ebx+esi],31h		;move an ascii 1 into the string
+						.elseif AH==2						;if AH is 2
+ 00000060  C6 04 1E 32					mov byte ptr[ebx+esi],32h		;move an ascii 2 into the string
+						.elseif AH==3						;if AH is 3
+ 0000006E  C6 04 1E 33					mov byte ptr[ebx+esi],33h		;move an ascii 3 into the string
+						.elseif AH==4						;if AH is 4
+ 00000079  C6 04 1E 34					mov byte ptr[ebx+esi],34h		;move an ascii 4 into the string
+						.elseif AH==5						;if AH is 5
+ 00000084  C6 04 1E 35					mov byte ptr[ebx+esi],35h		;move an ascii 5 into the string
+						.elseif AH==6						;if AH is 6
+ 0000008F  C6 04 1E 36					mov byte ptr[ebx+esi],36h		;move an ascii 6 into the string
+						.elseif AH==7						;if AH is 7
+ 0000009A  C6 04 1E 37					mov byte ptr[ebx+esi],37h		;move an ascii 7 into the string
+						.elseif AH==8						;if AH is 8
+ 000000A5  C6 04 1E 38					mov byte ptr[ebx+esi],38h		;move an ascii 8 into the string
+						.elseif AH==9						;if AH is 9
+ 000000B0  C6 04 1E 39					mov byte ptr[ebx+esi],39h		;move an ascii 9 into the string
+						.elseif AH==10						;if AH is 10
+ 000000BB  C6 04 1E 41					mov byte ptr[ebx+esi],041h		;move an ascii A into the string
+						.elseif AH==11						;if AH is 11
+ 000000C6  C6 04 1E 42					mov byte ptr[ebx+esi],042h		;move an ascii B into the string
+						.elseif AH==12						;if AH is 12
+ 000000D1  C6 04 1E 43					mov byte ptr[ebx+esi],043h		;move an ascii C into the string
+						.elseif AH==13						;if AH is 13
+ 000000DC  C6 04 1E 44					mov byte ptr[ebx+esi],044h		;move an ascii D into the string
+						.elseif AH==14						;if AH is 14
+ 000000E7  C6 04 1E 45					mov byte ptr[ebx+esi],045h		;move an ascii E into the string
+						.else		 						;else AH is 15
+ 000000ED  C6 04 1E 46					mov byte ptr[ebx+esi],046h		;move an ascii F into the string
+						.endif								;end if AH==0
+ 000000F1  46					inc esi								;go to next byte in the string
+						.if AL==0							;if AL is zero
+ 000000F6  C6 04 1E 30					mov byte ptr[ebx+esi],30h		;move an ascii 0 into the string
+						.elseif AL==1						;if AL is 1
+ 00000103  C6 04 1E 31					mov byte ptr[ebx+esi],31h		;move an ascii 1 into the string
+						.elseif AL==2						;if AL is 2
+ 00000110  C6 04 1E 32					mov byte ptr[ebx+esi],32h		;move an ascii 2 into the string
+						.elseif AL==3						;if AL is 3
+ 0000011A  C6 04 1E 33					mov byte ptr[ebx+esi],33h		;move an ascii 3 into the string
+						.elseif AL==4						;if AL is 4
+ 00000124  C6 04 1E 34					mov byte ptr[ebx+esi],34h		;move an ascii 4 into the string
+						.elseif AL==5						;if AL is 5
+ 0000012E  C6 04 1E 35					mov byte ptr[ebx+esi],35h		;move an ascii 5 into the string
+						.elseif AL==6						;if AL is 6
+ 00000138  C6 04 1E 36					mov byte ptr[ebx+esi],36h		;move an ascii 6 into the string
+						.elseif AL==7						;if AL is 7
+ 00000142  C6 04 1E 37					mov byte ptr[ebx+esi],37h		;move an ascii 7 into the string
+						.elseif AL==8						;if AL is 8
+ 0000014C  C6 04 1E 38					mov byte ptr[ebx+esi],38h		;move an ascii 8 into the string
+						.elseif AL==9						;if AL is 9
+ 00000156  C6 04 1E 39					mov byte ptr[ebx+esi],39h		;move an ascii 9 into the string
+						.elseif AL==10						;if AL is 10
+ 00000160  C6 04 1E 41					mov byte ptr[ebx+esi],041h		;move an ascii A into the string
+						.elseif AL==11						;if AL is 11
+ 0000016A  C6 04 1E 42					mov byte ptr[ebx+esi],042h		;move an ascii B into the string
+						.elseif AL==12						;if AL is 12
+ 00000174  C6 04 1E 43					mov byte ptr[ebx+esi],043h		;move an ascii C into the string
+						.elseif AL==13						;if AL is 13
+ 0000017E  C6 04 1E 44					mov byte ptr[ebx+esi],044h		;move an ascii D into the string
+						.elseif AL==14						;if AL is 14
+ 00000188  C6 04 1E 45					mov byte ptr[ebx+esi],045h		;move an ascii E into the string
+						.else		 						;else AL is 15
+ 0000018E  C6 04 1E 46					mov byte ptr[ebx+esi],046h		;move an ascii F into the string
+						.endif								;end if AL ==0
+ 00000192  46					inc esi								;go to next byte in the string
+ 00000193  47					inc edi								;go to next byte in the source
+ 00000194  49					dec ecx								;loop too great do manual loop with jumps
+ 00000195  83 F9 00				cmp ecx,0							;if ecx is less than zero
+ 00000198  0F 84 00000198			je next								;go to the next step
+ 0000019E  E9 FFFFFE8A				jmp stLoop							;else loop
+						.else								;else if numBytes ==0
+ 000001A8  8A 4D FF				mov cl,bAddressShift				;placed in cl to shift right
+ 000001AB  D3 EA				SHR edx,cl							;get the first byte of the address
+						.if DL==0							;if DL is zero
+ 000001B1  C6 04 1E 30					mov byte ptr[ebx+esi],30h		;move an ascii 0 into the string
+						.elseif DL==1						;if DL is 1
+ 000001BF  C6 04 1E 31					mov byte ptr[ebx+esi],31h		;move an ascii 1 into the string
+						.elseif DL==2						;if DL is 2
+ 000001CD  C6 04 1E 32					mov byte ptr[ebx+esi],32h		;move an ascii 2 into the string
+						.elseif DL==3						;if DL is 3
+ 000001DB  C6 04 1E 33					mov byte ptr[ebx+esi],33h		;move an ascii 3 into the string
+						.elseif DL==4						;if DL is 4
+ 000001E6  C6 04 1E 34					mov byte ptr[ebx+esi],34h		;move an ascii 4 into the string
+						.elseif DL==5						;if DL is 5
+ 000001F1  C6 04 1E 35					mov byte ptr[ebx+esi],35h		;move an ascii 5 into the string
+						.elseif DL==6						;if DL is 6
+ 000001FC  C6 04 1E 36					mov byte ptr[ebx+esi],36h		;move an ascii 6 into the string
+						.elseif DL==7						;if DL is 7
+ 00000207  C6 04 1E 37					mov byte ptr[ebx+esi],37h		;move an ascii 7 into the string
+						.elseif DL==8						;if DL is 8
+ 00000212  C6 04 1E 38					mov byte ptr[ebx+esi],38h		;move an ascii 8 into the string
+						.elseif DL==9						;if DL is 9
+ 0000021D  C6 04 1E 39					mov byte ptr[ebx+esi],39h		;move an ascii 9 into the string
+						.elseif DL==10						;if DL is 10
+ 00000228  C6 04 1E 41					mov byte ptr[ebx+esi],041h		;move an ascii A into the string
+						.elseif DL==11						;if DL is 11
+ 00000233  C6 04 1E 42					mov byte ptr[ebx+esi],042h		;move an ascii B into the string
+						.elseif DL==12						;if DL is 12
+ 0000023E  C6 04 1E 43					mov byte ptr[ebx+esi],043h		;move an ascii C into the string
+						.elseif DL==13						;if DL is 13
+ 00000249  C6 04 1E 44					mov byte ptr[ebx+esi],044h		;move an ascii D into the string
+						.elseif DL==14						;if DL is 14
+ 00000254  C6 04 1E 45					mov byte ptr[ebx+esi],045h		;move an ascii E into the string
+						.else		 						;else DL is 15
+ 0000025A  C6 04 1E 46					mov byte ptr[ebx+esi],046h		;move an ascii F into the string
+						.endif
+ 0000025E  46					inc esi						;get the next byte in the string
+ 0000025F  80 6D FF 04				sub bAddressShift,4			;will shift to the next byte
+ 00000263  8B 55 0C				mov edx,lpSource			;restore the address
+ 00000266			address:
+ 00000266  8A 4D FF				mov cl,bAddressShift		;store the shift count in cl to perform shifting
+ 00000269  D3 EA				SHR edx,cl					;get the first byte of the address
+ 0000026B  66| C1 E2 04				SHl dx,4				;shift to right to get low order of byte alone in top of dl
+ 0000026F  C0 EA 04				shr dl,4				;shift to right to get low order of byte to bottom of dl
+						.if DL==0							;if DL is zero
+ 00000276  C6 04 1E 30					mov byte ptr[ebx+esi],30h		;move an ascii 0 into the string
+						.elseif DL==1						;if DL is 1
+ 00000284  C6 04 1E 31					mov byte ptr[ebx+esi],31h		;move an ascii 1 into the string
+						.elseif DL==2						;if DL is 2
+ 00000292  C6 04 1E 32					mov byte ptr[ebx+esi],32h		;move an ascii 2 into the string
+						.elseif DL==3						;if DL is 3
+ 000002A0  C6 04 1E 33					mov byte ptr[ebx+esi],33h		;move an ascii 3 into the string
+						.elseif DL==4						;if DL is 4
+ 000002AB  C6 04 1E 34					mov byte ptr[ebx+esi],34h		;move an ascii 4 into the string
+						.elseif DL==5						;if DL is 5
+ 000002B6  C6 04 1E 35					mov byte ptr[ebx+esi],35h		;move an ascii 5 into the string
+						.elseif DL==6						;if DL is 6
+ 000002C1  C6 04 1E 36					mov byte ptr[ebx+esi],36h		;move an ascii 6 into the string
+						.elseif DL==7						;if DL is 7
+ 000002CC  C6 04 1E 37					mov byte ptr[ebx+esi],37h		;move an ascii 7 into the string
+						.elseif DL==8						;if DL is 8
+ 000002D7  C6 04 1E 38					mov byte ptr[ebx+esi],38h		;move an ascii 8 into the string
+						.elseif DL==9						;if DL is 9
+ 000002E2  C6 04 1E 39					mov byte ptr[ebx+esi],39h		;move an ascii 9 into the string
+						.elseif DL==10						;if DL is 10
+ 000002ED  C6 04 1E 41					mov byte ptr[ebx+esi],041h		;move an ascii A into the string
+						.elseif DL==11						;if DL is 11
+ 000002F8  C6 04 1E 42					mov byte ptr[ebx+esi],042h		;move an ascii B into the string
+						.elseif DL==12						;if DL is 12
+ 00000303  C6 04 1E 43					mov byte ptr[ebx+esi],043h		;move an ascii C into the string
+						.elseif DL==13						;if DL is 13
+ 0000030E  C6 04 1E 44					mov byte ptr[ebx+esi],044h		;move an ascii D into the string
+						.elseif DL==14						;if DL is 14
+ 00000319  C6 04 1E 45					mov byte ptr[ebx+esi],045h		;move an ascii E into the string
+						.else		 						;else DL is 15
+ 0000031F  C6 04 1E 46					mov byte ptr[ebx+esi],046h		;move an ascii F into the string
+						.endif								;end if Dl ==0 
+ 00000323  80 6D FF 04				sub bAddressShift,4					;get the next digit in the address
+ 00000327  46					inc esi								;go to next byte in the  returned string
+ 00000328  8B 55 0C				mov edx, lpSource					;restore edx
+ 0000032B  80 7D FF 00				cmp bAddressShift,0					;if the address shift is less than 0
+ 0000032F  7C 05				jl next								;building the string is complete
+ 00000331  E9 FFFFFF30				jmp address							;else perform the next shift
+					.endif									;end if numBytes > 0
+ 00000336			next:										;handle exiting the method
+ 00000336  C6 04 1E 00			mov byte ptr[ebx+esi],00h				;null terminate the string
+					RET										;exit the method
+ 00000344			hexToCharacter endp							;end hexToCharacter
+
+
+				COMMENT%
+				************************************************************************************
+				* name:  charTo4HexDigits														   *
+				* date Created: 11/30/2017 														   *
+				*Date Last Modefied: 12/08/2017                                                    *
+				* purpose: take a string and return the equivalent dword mask                      *
+				*Notes on specifications,special algorithms, and assumptions: this method takes    *
+				*	the first 8 bytes of a valid null terminated  string it then goes through each *
+				*	byte individually and places the equivalent numeric value in the proper 	   *
+				*	position in a registerto be returned. a valid string has only 0-9 and a/A-f/F  * 
+				*																				   *
+				* @param  lpSourceString :dword address of a null terminated string                *
+				*								that will be converted into a dword mask		   *
+				* @Return eax:dword return the 4 byte mask                                         *
+				*                                                                                  *
+				************************************************************************************%
+ 00000344			charTo4HexDigits proc near32 stdCall uses ebx ecx edi edx esi, lpSourceString:dword
+ 0000034C  8B 5D 08			mov ebx,lpSourceString				;mov string into register to manipulate
+ 0000034F  8B F0			mov esi,eax							;store tle allocated memory in less v register
+ 00000351  BF 00000000			mov edi,0							;will increment to navigate through the string
+ 00000356  B9 00000008			mov ecx,8							;will only grab first 8 bytes of string
+ 0000035B  BA 00000000			mov edx,0							;clear out edx makes easier to see shifting 
+ 00000360			stLoop:									;handle each byte in the string
+ 00000360  83 F9 01			cmp ecx,1							;if 0 then the end of the mask has been filled
+ 00000363  0F 84 0000015A		je next								;mask is filled exit the method
+ 00000369  8A 04 1F			mov al,byte ptr [ebx+edi]			;grab the first byte of the string
+					.if al == '0'						; al contains ascii 0
+ 00000370  C1 E2 08				shl edx,8						;mov lowest order nibble out of dl
+ 00000373  B2 00				mov dl ,00h						;mov zero into edx
+ 00000375  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 00000378  C1 EA 04				shr edx,4						;reset the byte to al
+					.elseif al =='1'					;if al has ascii 1
+ 00000384  C1 E2 08				shl edx,8						;mov lowest order nibble out of dl
+ 00000387  B2 01				mov dl,01h						;mov a 1 into d register
+ 00000389  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 0000038C  C1 EA 04				shr edx,4                          ;reset the byte to al
+					.elseif al =='2'					;if al has ascii 2
+ 00000398  C1 E2 08				shl edx,8						;mov lowest order nibble out of dl
+ 0000039B  B2 02				mov dl,02h						;mov a 2 into d register
+ 0000039D  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 000003A0  C1 EA 04				shr edx,4                          ;reset the byte to al
+					.elseif al =='3'					;if al has ascii 3
+ 000003AC  C1 E2 08				shl edx,8						;mov lowest order nibble out of dl
+ 000003AF  B2 03				mov dl,03h						;mov a 3 into d register
+ 000003B1  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 000003B4  C1 EA 04				shr edx,4                          ;reset the byte to al
+					.elseif al =='4'					;if al has ascii 4
+ 000003C0  C1 E2 08				shl edx,8 						;mov lowest order nibble out of dl
+ 000003C3  B2 04				mov dl,04h						;mov a 4 into d register
+ 000003C5  C0 E2 04				shl dl,4						;shift to the next position
+ 000003C8  C1 EA 04				shr edx,4						;shift to the next position
+					.elseif al =='5'					;if al has ascii 5
+ 000003D4  C1 E2 08				shl edx,8 						;mov lowest order nibble out of dl
+ 000003D7  B2 05				mov dl,05h						;mov a 5 into d register
+ 000003D9  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 000003DC  C1 EA 04				shr edx,4                          ;reset the byte to al
+					.elseif al =='6'					;if al has ascii 1
+ 000003E8  C1 E2 08				shl edx,8 						;mov lowest order nibble out of dl
+ 000003EB  B2 06				mov dl,06h						;mov a 3 into d register
+ 000003ED  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 000003F0  C1 EA 04				shr edx,4                          ;reset the byte to al
+					.elseif al =='7'					;if al has ascii 1
+ 000003FC  C1 E2 08				shl edx,8 						;mov lowest order nibble out of dl
+ 000003FF  B2 07				mov dl,07h						;mov a 3 into d register
+ 00000401  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 00000404  C1 EA 04				shr edx,4                          ;reset the byte to al
+					.elseif al =='8'					;if al has ascii 1
+ 00000410  C1 E2 08				shl edx,8 						;mov lowest order nibble out of dl
+ 00000413  B2 08				mov dl,08h						;mov a 3 into d register
+ 00000415  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 00000418  C1 EA 04				shr edx,4                          ;reset the byte to al
+					.elseif al =='9'					;if al has ascii 1
+ 00000424  C1 E2 08				shl edx,8 						;mov lowest order nibble out of dl
+ 00000427  B2 09				mov dl,09h						;mov a 3 into d register
+ 00000429  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 0000042C  C1 EA 04				shr edx,4                          ;reset the byte to al
+					.elseif al =='A'||al =='a'			;if al has ascii 1
+ 0000043C  C1 E2 08				shl edx,8 						;mov lowest order nibble out of dl
+ 0000043F  B2 0A				mov dl,0Ah						;mov a 3 into d register
+ 00000441  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 00000444  C1 EA 04				shr edx,4                          ;reset the byte to al
+					.elseif al =='B'|| al =='b'			;if al has ascii 1
+ 00000451  C1 E2 08				shl edx,8 						;mov lowest order nibble out of dl
+ 00000454  B2 0B				mov dl,0Bh						;mov a 3 into d register
+ 00000456  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 00000459  C1 EA 04				shr edx,4                          ;reset the byte to al
+					.elseif al =='C'|| al =='c'			;if al has ascii 1
+ 00000466  C1 E2 08				shl edx,8 						;mov lowest order nibble out of dl
+ 00000469  B2 0C				mov dl,0Ch						;mov a 3 into d register
+ 0000046B  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 0000046E  C1 EA 04				shr edx,4                          ;reset the byte to al
+					.elseif al =='D'|| al =='d'			;if al has ascii 1
+ 0000047B  C1 E2 08				shl edx,8 						;mov lowest order nibble out of dl
+ 0000047E  B2 0D				mov dl,0Dh						;mov a 3 into d register
+ 00000480  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 00000483  C1 EA 04				shr edx,4                          ;reset the byte to al
+					.elseif al =='E'|| al =='e'			;if al has ascii 1
+ 00000490  C1 E2 08				shl edx,8 						;mov lowest order nibble out of dl
+ 00000493  B2 0E				mov dl,0Eh						;mov a 3 into d register
+ 00000495  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 00000498  C1 EA 04				shr edx,4                          ;reset the byte to al
+					.elseif al =='F'|| al =='f'			;if al has ascii 1
+ 000004A5  C1 E2 08				shl edx,8 						;mov lowest order nibble out of dl
+ 000004A8  B2 0F				mov dl,0Fh						;mov a 3 into d register
+ 000004AA  C0 E2 04				shl dl,4						;get previous nibble and current nibble together
+ 000004AD  C1 EA 04				shr edx,4                          ;reset the byte to al
+					.else								;else there was an invalid character
+ 000004B2  B8 FFFFFFFF				mov eax,-1						; return -1
+ 000004B7  E9 0000019A				jmp finish						;exit the method
+					.endif								;end if al == '0'
+ 000004BC  49				dec ecx								;get the bext byte
+ 000004BD  47				inc edi								;next byte in the string 
+ 000004BE  E9 FFFFFE9D			jmp stLoop							;test the next value
+ 000004C3			next:									;avoid shifting leading nibble out of Register
+ 000004C3  C1 E2 04			shl edx,4							;put leading bit in highest position
+ 000004C6  66| 8B C2			mov ax,dx							;preserve low order of mask
+ 000004C9  8A 0C 1F			mov cl,byte ptr [ebx+edi]			;grab the first byte of the string
+					.if cl == '0'						; al contains ascii 0
+ 000004D1  66| C1 E0 04				shl ax,4						;mov lowest order nibble out of dl
+ 000004D5  B0 00				mov al,00h						;mov a 1 into d register
+ 000004D7  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 000004DA  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.elseif cl =='1'					;if al has ascii 1
+ 000004E8  66| C1 E0 04				shl ax,4						;mov lowest order nibble out of dl
+ 000004EC  B0 01				mov al,01h						;mov a 1 into d register
+ 000004EE  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 000004F1  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.elseif cl =='2'					;if al has ascii 2
+ 000004FF  66| C1 E0 04				shl ax,4						;mov lowest order nibble out of dl
+ 00000503  B0 02				mov al,02h						;mov a 2 into d register
+ 00000505  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 00000508  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.elseif cl =='3'					;if al has ascii 3
+ 00000516  66| C1 E0 04				shl ax,4						;mov lowest order nibble out of dl
+ 0000051A  B0 03				mov al,03h						;mov a 3 into d register
+ 0000051C  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 0000051F  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.elseif cl =='4'					;if al has ascii 4
+ 0000052D  66| C1 E0 04				shl ax,4 						;mov lowest order nibble out of dl
+ 00000531  B0 04				mov al,04h						;mov a 4 into d register
+ 00000533  C0 E0 04				shl al,4						;shift to the next position
+ 00000536  66| C1 E8 04				shr ax,4						;shift to the next position
+					.elseif cl =='5'					;if al has ascii 5
+ 00000544  66| C1 E0 04				shl ax,4 						;mov lowest order nibble out of dl
+ 00000548  B0 05				mov al,05h						;mov a 3 into d register
+ 0000054A  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 0000054D  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.elseif cl =='6'					;if al has ascii 1
+ 0000055B  66| C1 E0 04				shl ax,4 						;mov lowest order nibble out of dl
+ 0000055F  B0 06				mov al,06h						;mov a 3 into d register
+ 00000561  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 00000564  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.elseif cl =='7'					;if al has ascii 1
+ 00000572  66| C1 E0 04				shl ax,4 						;mov lowest order nibble out of dl
+ 00000576  B0 07				mov al,07h						;mov a 3 into d register
+ 00000578  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 0000057B  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.elseif cl =='8'					;if al has ascii 1
+ 00000589  66| C1 E0 04				shl ax,4 						;mov lowest order nibble out of dl
+ 0000058D  B0 08				mov al,08h						;mov a 3 into d register
+ 0000058F  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 00000592  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.elseif cl =='9'					;if al has ascii 1
+ 000005A0  66| C1 E0 04				shl ax,4 						;mov lowest order nibble out of dl
+ 000005A4  B0 09				mov al,09h						;mov a 3 into d register
+ 000005A6  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 000005A9  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.elseif cl =='A'||cl =='a'			;if cl has ascii 1
+ 000005BC  66| C1 E0 04				shl ax,4 						;mov lowest order nibble out of dl
+ 000005C0  B0 0A				mov al,0Ah						;mov a 3 into d register
+ 000005C2  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 000005C5  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.elseif cl =='B'|| cl =='b'			;if al has ascii 1
+ 000005D8  66| C1 E0 04				shl ax,4 						;mov lowest order nibble out of dl
+ 000005DC  B0 0B				mov al,0Bh						;mov a 3 into d register
+ 000005DE  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 000005E1  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.elseif cl =='C'|| cl =='c'			;if al has ascii 1
+ 000005F1  66| C1 E0 04				shl ax,4 						;mov lowest order nibble out of dl
+ 000005F5  B0 0C				mov al,0Ch						;mov a 3 into d register
+ 000005F7  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 000005FA  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.elseif cl =='D'|| cl =='d'			;if al has ascii 1
+ 0000060A  66| C1 E0 04				shl ax,4 						;mov lowest order nibble out of dl
+ 0000060E  B0 0D				mov al,0Dh						;mov a 3 into d register
+ 00000610  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 00000613  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.elseif cl =='E'|| cl =='e'			;if al has ascii 1
+ 00000623  66| C1 E0 04				shl ax,4 						;mov lowest order nibble out of dl
+ 00000627  B0 0E				mov al,0Eh						;mov a 3 into d register
+ 00000629  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 0000062C  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.elseif cl =='F'|| cl =='f'			;if al has ascii 1
+ 0000063C  66| C1 E0 04				shl ax,4 						;mov lowest order nibble out of dl
+ 00000640  B0 0F				mov al,0Fh						;mov a 3 into d register
+ 00000642  C0 E0 04				shl al,4						;get previous nibble and current nibble together
+ 00000645  66| C1 E8 04				shr ax,4                           ;reset the byte to al
+					.else								;else there was an invalid character
+ 0000064B  B8 FFFFFFFF				mov eax,-1						; return -1
+ 00000650  EB 04				jmp finish						;exit the method
+					.endif								;end if cl==0
+ 00000652  8A D0			mov dl,al							;restore the full mask
+ 00000654  8B C2			mov eax,edx							;return the resultant mask
+ 00000656			finish:									;exit the method
+					RET									;exit the method
+ 0000065F			charTo4HexDigits endp					;end of charTo4HexDigits
+
+				COMMENT%
+				************************************************************************************
+				* name:  encrypt32Bit															   *
+				* date Created: 11/30/2017 														   *
+				*Date Last Modefied: 12/08/2017                                                    *
+				* purpose: tae astring and encrypt it using a mask			                       *
+				*Notes on specifications,special algorithms, and assumptions:   				   * 
+				*																				   *
+				* @param  lpSourceString :dword address of a null terminated string                *
+				*								that will be encrypted							   *
+				* @param dMask:dword a 4 byte mask that will be used to encrypt the string		   *	
+				* @Return eax:dword return the address of the new string                           *
+				*                                                                                  *
+				************************************************************************************%
+ 0000065F			encrypt32Bit proc near32 stdCall uses ebx ecx edi edx esi, lpSourceString:dword, 
+				dMask:dword, numBytes:dword
+					local count:word, remainder:word		;local storage
+ 0000066A  8B 5D 08			mov EBX,lpSourceString					;put the original string in register to encrypt
+ 0000066D  8B 45 10			mov eax,numBytes						;move to eax to prime for division
+ 00000670  66| 99			cwd										;spread across dx:ax pair
+ 00000672  B9 00000004			mov ecx,4								;prepare to divide by 4
+ 00000677  66| F7 F9			idiv cx									;divide the number of bytes by 4
+ 0000067A  8B 4D 0C			mov ecx,dMask							;will be used to exor later
+ 0000067D  66| 89 45 FE			mov count,ax							;store the product for looping
+ 00000681  66| 89 55 FC			mov remainder,dx						;store the remainder for comparisons
+ 00000685  8B 75 10			mov esi,numBytes						;store the number of bytes to allocate storage
+ 00000688  46				inc esi									;include null character
+					INVOKE memoryallocBailey, esi			;allocate a block of storage to store encrypt
+ 0000068F  8B F8			mov edi,eax								;returned memory block in less volatile registe
+ 00000691  BE 00000000			mov esi,0								;navigate through string
+ 00000696  8B 45 10			mov eax,numBytes						;compare to handle the remaining bytes
+ 00000699  83 F8 04			cmp eax,4								;if for or less
+ 0000069C  7E 3F			jle  carry								;handle the remainder
+ 0000069E  B8 00000000			mov eax,0								;wipe eax
+ 000006A3			stLoop:										;perform encryption 4 bytes at a time
+ 000006A3  66| 83 7D FE			cmp count,0								;if the count is zero
+	   00
+ 000006A8  74 33			je carry								;jump and handle
+					
+ 000006AA  C1 E0 08			shl eax,8								;shift the first byte
+ 000006AD  8A 04 1E			mov al, byte ptr [ebx+esi]				;grab the first byte of the orig string
+ 000006B0  46				inc esi									;get to the next byte
+					
+ 000006B1  C1 E0 08			shl eax,8								;shift the second byte
+ 000006B4  8A 04 1E			mov al,byte ptr [ebx+esi]				;second byte from original string
+ 000006B7  46				inc esi									;get the next byte
+					
+ 000006B8  C1 E0 08			shl eax,8								;shift the third byte
+ 000006BB  8A 04 1E			mov al,byte ptr [ebx+esi]				;third byte from the original string 
+ 000006BE  46				inc esi									;get the next byte
+					
+ 000006BF  C1 E0 08			shl eax,8								;shift the fourth byte
+ 000006C2  8A 04 1E			mov al,byte ptr [ebx+esi]				;get the fourth byte
+ 000006C5  46				inc esi									;increment to the next byte
+ 000006C6  33 C1			xor eax,ecx								;exclusive or the first 4 bytes with the mask
+ 000006C8  66| C1 C0 08			ROL ax,8								;roll left 8
+ 000006CC  C1 C0 10			ROL eax,16								;roll left 16
+ 000006CF  66| C1 C0 08			ROL ax,8								;roll left 8
+ 000006D3  89 44 3E FC			mov dword ptr [edi+esi-4],eax			;save in mem the first four encrypted bytes
+ 000006D7  66| FF 4D FE			dec  count								;reduce the loop count
+ 000006DB  EB C6			jmp stLoop 								;grab the next 4 bytes		
+ 000006DD			carry:										;handle the remainder not divisiable by 4
+ 000006DD  66| 83 7D FC			cmp remainder,0							;if there is no remainder
+	   00
+ 000006E2  74 16			je done									;exit the method else handle the remaining byte
+ 000006E4  C1 E0 08			shl eax,8								;shift over the first byte
+ 000006E7  8A 04 1E			mov al,byte ptr[ebx+esi]				;store the first byte
+ 000006EA  46				inc esi									;go to next byte of the string
+ 000006EB  C1 C1 08			rol ecx, 8								;roll the shell to encryp on the correct byte
+ 000006EE  32 C1			xor al,cl								;encrypt a single byte
+ 000006F0  88 44 3E FF			mov byte ptr [edi+esi-1],al				;store a single byte
+ 000006F4  66| FF 4D FC			dec remainder							;decrement the remainder and
+ 000006F8  EB E3			jmp carry								;jump to grab the next byte
+ 000006FA			done: 										;handle exiting the method
+ 000006FA  8B C7			mov eax,edi							    ;return the encrypted string
+					RET										;exit the method
+ 00000705			encrypt32Bit endp
+
+
+					END
+Microsoft (R) Macro Assembler Version 6.11		    12/08/17 00:57:00
+convertMethods.asm					     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+FLAT . . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	32 Bit	 00000000 DWord	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 00000705 DWord	  Public  'CODE'	
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+charTo4HexDigits . . . . . . . .	P Near	 00000344 _TEXT	Length= 0000031B Public STDCALL
+  lpSourceString . . . . . . . .	DWord	 bp + 00000008
+  stLoop . . . . . . . . . . . .	L Near	 00000360 _TEXT	
+  next . . . . . . . . . . . . .	L Near	 000004C3 _TEXT	
+  finish . . . . . . . . . . . .	L Near	 00000656 _TEXT	
+encrypt32Bit . . . . . . . . . .	P Near	 0000065F _TEXT	Length= 000000A6 Public STDCALL
+  lpSourceString . . . . . . . .	DWord	 bp + 00000008
+  dMask  . . . . . . . . . . . .	DWord	 bp + 0000000C
+  numBytes . . . . . . . . . . .	DWord	 bp + 00000010
+  count  . . . . . . . . . . . .	Word	 bp - 00000002
+  remainder  . . . . . . . . . .	Word	 bp - 00000004
+  stLoop . . . . . . . . . . . .	L Near	 000006A3 _TEXT	
+  carry  . . . . . . . . . . . .	L Near	 000006DD _TEXT	
+  done . . . . . . . . . . . . .	L Near	 000006FA _TEXT	
+hexToCharacter . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000344 Public STDCALL
+  lpDestination  . . . . . . . .	DWord	 bp + 00000008
+  lpSource . . . . . . . . . . .	DWord	 bp + 0000000C
+  numBytes . . . . . . . . . . .	DWord	 bp + 00000010
+  bAddressShift  . . . . . . . .	Byte	 bp - 00000001
+  stLoop . . . . . . . . . . . .	L Near	 0000002D _TEXT	
+  address  . . . . . . . . . . .	L Near	 00000266 _TEXT	
+  next . . . . . . . . . . . . .	L Near	 00000336 _TEXT	
+memoryallocBailey  . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 00000000h   
+@DataSize  . . . . . . . . . . .	Number	 00000000h   
+@Interface . . . . . . . . . . .	Number	 00000000h   
+@Model . . . . . . . . . . . . .	Number	 00000007h   
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 FLAT
+@fardata?  . . . . . . . . . . .	Text   	 FLAT
+@fardata . . . . . . . . . . . .	Text   	 FLAT
+@stack . . . . . . . . . . . . .	Text   	 FLAT
+
+	   0 Warnings
+	   0 Errors

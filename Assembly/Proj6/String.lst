@@ -1,0 +1,271 @@
+Microsoft (R) Macro Assembler Version 6.11		    11/24/17 11:59:00
+String.asm						     Page 1 - 1
+
+
+				;******************************************************************************************
+				;Program Name: string.asm
+				;Programmer:   Justin Hopkins
+				;Class:        CSCI 2160-001
+				;Date:         11/9/2017
+				;Purpose:
+				;	a collection of methods to manipulate strings *See method documentation for 
+				;	a description of what each method does*
+				;******************************************************************************************
+					.486
+					.model flat
+					String_length	proto Near32 stdcall, lpString:dword
+					memoryallocBailey proto near32 stdCall, numBytes:dword
+					String_copy 	proto near32 stdcall, lpString2:dword
+					String_toUpperCase proto near32 stdCall, lpString3:dWord
+					String_equals proto near32 stdCall  lpString4:dWord, lpString5:dWord
+					String_equalsIgnoreCase proto near32 stdCall, lpString6:dWord, lpString7:dWord
+					String_appends proto near32 stdCall, lpString8:dWord, lpString9:dWord
+ 00000000				.code
+
+				COMMENT%
+				************************************************************************************
+				 name:  String_length
+				 date: 11/9/2017
+				 purpose: counts the number of ascii characters in a given string
+				 @param  lpString:dword 	string you wish to count the length of
+				 @Return AX 	Returns the count in the AX register
+				************************************************************************************%	
+ 00000000			String_length	proc Near32 stdcall uses ebx edi, lpString:dword
+ 00000005  66| B8 0000			mov ax,0							;intialize the register to 0
+ 00000009  BF 00000000			mov edi,0							;intialize the register to 0
+ 0000000E			count:
+ 0000000E  8B 5D 08			mov ebx, lpString					;address of string put in register for manipulation
+ 00000011  80 3C 1F 00			cmp byte ptr [ebx+edi],00h			;if null character hit exit method
+ 00000015  74 05			je finish							;exit method
+ 00000017  66| 40			inc ax								;increase count of the size of the string
+ 00000019  47				inc edi								;grab the next byte 
+ 0000001A  EB F2			jmp count							;in the string
+ 0000001C			finish:
+					Ret									;exit the method
+ 00000022			String_length	endp
+
+
+				COMMENT%
+				************************************************************************************
+				 name:  String_copy
+				 date: 11/9/2017
+				 purpose: makes a copy of a string and returns the location of the copy
+				 @param  lpString2:dword 	address of the first byte of a string to copy
+				 @Return EAX 	Returns the address of the copy of the string
+				************************************************************************************%
+ 00000022			String_copy	proc Near32 stdcall uses ebx edx ecx edi, lpString2:dword
+ 00000029  B8 00000000			mov eax,0							;initialize the register to 0
+ 0000002E  8B 5D 08			mov ebx,lpstring2					;address of string put in register for manipulation
+					Invoke String_length, lpString2		;get the size of the string
+ 00000039  40				inc eax								;factor in the null character
+ 0000003A  8B C8			mov ecx,eax							;preserve in less volatile register
+					Invoke memoryallocBailey, ecx		;get a new block of memory the size of the string 
+ 00000042  8B D0			mov edx,eax							;preserve new string in less volatile register
+ 00000044  BF 00000000			mov edi,0							;initialize for first byte in string
+ 00000049			next:
+ 00000049  3B F9			cmp edi,ecx							;if the end of string is hit exit the method
+ 0000004B  74 09			je finish							;exit the method
+ 0000004D  8A 04 1F			mov al,[ebx+edi]					;else grab a character
+ 00000050  88 04 17			mov byte ptr [edx+edi], AL			;and store it in the new string
+ 00000053  47				inc edi								;increment to the next character
+ 00000054  EB F3			jmp next							;grab the next character
+ 00000056			finish:
+ 00000056  8B C2			mov eax, edx						;return the new string
+					RET									;exit the method
+ 00000060			String_copy 	endp
+
+				COMMENT%
+				************************************************************************************
+				 name:  String_toUpperCase
+				 date: 11/9/2017
+				 purpose: makes a copy of a given string and converts it to uppercase 
+				 @param  lpString3:dword 	addres of the first byte of a string to convert to uppercase
+				 @Return EAX 	Returns the location of the new uppercase string
+				************************************************************************************%
+ 00000060			String_toUpperCase proc near32 stdCall uses ebx ecx edi, lpString3:dWord
+ 00000066  8B 5D 08			mov ebx, lpString3					;address of string put in register for manipulation
+					Invoke String_copy, lpString3		;first make copy of the string
+ 00000071  8B C8			mov ecx, eax						;store the copy volatile register
+ 00000073  BF 00000000			mov edi,0							;initalize to zero to grab first character
+ 00000078			next:
+ 00000078  80 3C 0F 00			cmp byte ptr [ecx+edi],0			;if null character hit 
+ 0000007C  74 1C			je finish							;exit method
+					.if byte ptr [ecx+edi] >= 61h && byte ptr [ecx+edi] <= 7ah	;if a lowercase char
+ 0000008A  8A 04 0F				mov al, byte ptr[ecx+edi]		;put the char in register
+ 0000008D  2C 20				sub al,20h						;sub 20 hex to make it a capital letter
+ 0000008F  88 04 0F				mov byte ptr [ecx+edi],al		;place the new capitalized character back in string
+ 00000092  47					inc edi							;increment to the next character
+ 00000093  EB E3				jmp next						;test the next character
+					.else								;otherwise already either capitalized or other
+ 00000097  47					inc edi							;increment to the next character
+ 00000098  EB DE				jmp next						;test the next character
+					.endif
+ 0000009A			finish:
+ 0000009A  8B C1			mov eax,ecx							;return the new capitalized string
+					Ret									;exit the method
+ 000000A3			String_toUpperCase endp
+
+				COMMENT%
+				************************************************************************************
+				 name:  String_equals
+				 date: 11/9/2017
+				 purpose: compares two strings to see if they are equal
+				 @param  lpString4:dword 	addres of the first byte of the first String
+				 @param  lpString5:dWord	address of the first byte of the second string
+				 @Return al 	Returns 1 if they are equal and returns 0 if they are not 
+				************************************************************************************%
+ 000000A3			String_equals proc near32 stdCall uses ebx ecx edi edx, lpString4:dWord, lpString5:dWord
+
+					Invoke String_length, lpString4		;get the size of the first string
+ 000000B2  66| 8B D0			mov dx,ax							;preserve in less volatile register
+					Invoke String_length, lpString5		;get size of second string
+					.if ax != dx						;if not the same length we no they can't be equal
+ 000000C2  B0 00				mov al,0						;set al to false
+ 000000C4  EB 22				jmp finish						;exit the method
+					.endif
+ 000000C6  B0 01			mov al,1							;initialize to true
+ 000000C8  8B 5D 08			mov ebx,lpString4					;store first string for manipulation
+ 000000CB  8B 4D 0C			mov ecx, lpString5					;store second string for manipulation
+ 000000CE  BF 00000000			mov edi,0							;initialize to the first byte in the string
+ 000000D3			next:
+ 000000D3  80 3C 1F 00			cmp byte ptr [ebx+edi],0			;if null character hit 
+ 000000D7  74 0F			je finish							;exit the method
+ 000000D9  8A 14 1F			mov dl,byte ptr[ebx+edi]			;grab the character from string 1
+					.if dl== byte ptr[ecx+edi]			;if equal to character in string 2	
+ 000000E1  47					inc edi							;move to next character
+ 000000E2  EB EF				jmp next						;test the next character
+					.else								;else if they weren't equal
+ 000000E6  B0 00				mov al,0						;return false
+					.endif
+ 000000E8			finish:
+					RET									;exit the method
+ 000000F0			String_equals endp
+
+				COMMENT%
+				************************************************************************************
+				 name:  String_equalsIgnoreCase
+				 date: 11/9/2017
+				 purpose: compares two strings to see if they are equal and ignores the case
+				 @param  lpString4:dword 	addres of the first byte of the first String
+				 @param  lpString5:dWord	address of the first byte of the second string
+				 @Return al 	Returns 1 if they are equal and returns 0 if they are not 
+				************************************************************************************%
+ 000000F0			String_equalsIgnoreCase proc near32 stdCall uses ebx ecx edi edx , lpString6:dWord, lpString7:dWord
+					Invoke String_toUpperCase, lpString6	;first convert 
+ 000000FF  8B D8			mov ebx,eax								;both strings 
+					Invoke String_toUpperCase, lpString7	;to
+ 00000109  8B C8			mov ecx,eax								;uppercase
+					Invoke String_equals, ebx,ecx			;then test and see if they are equal in uppercase
+															;result returned in al
+					RET										;exit the method	
+ 0000011A			String_equalsIgnoreCase endp
+				Comment%
+				************************************************************************************
+				 name:  String_appends
+				 date: 11/9/2017
+				 purpose: takes the first string and appends it to the second to make one string
+				 @param  lpString4:dword 	addres of the first byte of the first String
+				 @param  lpString5:dWord	address of the first byte of the second string
+				 @Return EAX 	Returns the address of the first byte of the new appended string 
+				************************************************************************************%
+ 0000011A			String_appends proc near32 stdCall uses ebx ecx edi edx esi, lpString8:dWord, lpString9:dWord
+					Invoke String_length, lpString8	;GET THE size of the first string
+ 0000012A  66| 8B C8			mov cx,ax						;preserve the size of the first string
+					Invoke String_length, lpString9	;get the size of the 2nd string 
+ 00000135  66| 03 C8			add cx,ax						;add the size of the 2nd string to the size of the 1st 
+ 00000138  66| 41			inc cx							;add the null character 
+					Invoke memoryallocBailey,cx		;get a block of memory the size of lpString6 +lpString7
+ 00000143  8B C8			mov ecx, eax					;store that size in a less fragile register
+ 00000145  8B 5D 08			mov ebx,lpString8				;put the first string in a register for manipulation
+ 00000148  8B 55 0C			mov edx,lpString9				;second string in register for manipulation
+ 0000014B  BE 00000000			mov esi,0						;initialize to access bytes of the string
+ 00000150  BF 00000000			mov edi,0						;initialize to store bytes of the string
+ 00000155			firstStr:
+ 00000155  80 3C 1E 00			cmp byte ptr [ebx+esi],0		;see if the null character has been hit 
+ 00000159  74 0A			je secondStr					;if it has skip over it and start storing the secondstr
+ 0000015B  8A 04 1E			mov al, byte ptr [ebx+esi]		;place the first character in register to srore in string
+ 0000015E  88 04 0F			mov byte ptr [ecx+edi],al		;store char from first string in the appended string
+ 00000161  46				inc esi							;grab the next char from the first string
+ 00000162  47				inc edi							;next position in the appended string
+ 00000163  EB F0			jmp firstStr					;handle the next character
+ 00000165			secondStr:			
+ 00000165  BE 00000000			mov esi,0						;reset to the first byte of the second string
+ 0000016A			secondStr2:
+ 0000016A  8A 04 16			mov al,byte ptr [edx+esi]		;grab byte from second string 	
+ 0000016D  88 04 0F			mov byte ptr[ecx+edi],al		;place it in the appended string
+ 00000170  80 3C 16 00			cmp byte ptr [edx+esi],0		;if the null character was hit 
+ 00000174  74 04			je Finish						;exit the method
+ 00000176  46				inc esi							;else 
+ 00000177  47				inc edi							;grab the
+ 00000178  EB F0			jmp secondStr2					;next byte
+ 0000017A			finish: 
+ 0000017A  8B C1			mov eax , ecx					;return the location of the appended string
+					RET								;exit the method	
+ 00000185			String_appends endp
+
+				END									;The very LAST line in your program. Terminate assembly
+Microsoft (R) Macro Assembler Version 6.11		    11/24/17 11:59:00
+String.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+FLAT . . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	32 Bit	 00000000 DWord	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 00000185 DWord	  Public  'CODE'	
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+String_appends . . . . . . . . .	P Near	 0000011A _TEXT	Length= 0000006B Public STDCALL
+  lpString8  . . . . . . . . . .	DWord	 bp + 00000008
+  lpString9  . . . . . . . . . .	DWord	 bp + 0000000C
+  firstStr . . . . . . . . . . .	L Near	 00000155 _TEXT	
+  secondStr  . . . . . . . . . .	L Near	 00000165 _TEXT	
+  secondStr2 . . . . . . . . . .	L Near	 0000016A _TEXT	
+  finish . . . . . . . . . . . .	L Near	 0000017A _TEXT	
+String_copy  . . . . . . . . . .	P Near	 00000022 _TEXT	Length= 0000003E Public STDCALL
+  lpString2  . . . . . . . . . .	DWord	 bp + 00000008
+  next . . . . . . . . . . . . .	L Near	 00000049 _TEXT	
+  finish . . . . . . . . . . . .	L Near	 00000056 _TEXT	
+String_equalsIgnoreCase  . . . .	P Near	 000000F0 _TEXT	Length= 0000002A Public STDCALL
+  lpString6  . . . . . . . . . .	DWord	 bp + 00000008
+  lpString7  . . . . . . . . . .	DWord	 bp + 0000000C
+String_equals  . . . . . . . . .	P Near	 000000A3 _TEXT	Length= 0000004D Public STDCALL
+  lpString4  . . . . . . . . . .	DWord	 bp + 00000008
+  lpString5  . . . . . . . . . .	DWord	 bp + 0000000C
+  next . . . . . . . . . . . . .	L Near	 000000D3 _TEXT	
+  finish . . . . . . . . . . . .	L Near	 000000E8 _TEXT	
+String_length  . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000022 Public STDCALL
+  lpString . . . . . . . . . . .	DWord	 bp + 00000008
+  count  . . . . . . . . . . . .	L Near	 0000000E _TEXT	
+  finish . . . . . . . . . . . .	L Near	 0000001C _TEXT	
+String_toUpperCase . . . . . . .	P Near	 00000060 _TEXT	Length= 00000043 Public STDCALL
+  lpString3  . . . . . . . . . .	DWord	 bp + 00000008
+  next . . . . . . . . . . . . .	L Near	 00000078 _TEXT	
+  finish . . . . . . . . . . . .	L Near	 0000009A _TEXT	
+memoryallocBailey  . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 00000000h   
+@DataSize  . . . . . . . . . . .	Number	 00000000h   
+@Interface . . . . . . . . . . .	Number	 00000000h   
+@Model . . . . . . . . . . . . .	Number	 00000007h   
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 FLAT
+@fardata?  . . . . . . . . . . .	Text   	 FLAT
+@fardata . . . . . . . . . . . .	Text   	 FLAT
+@stack . . . . . . . . . . . . .	Text   	 FLAT
+
+	   0 Warnings
+	   0 Errors
